@@ -1,5 +1,5 @@
 // Subscription DTOs
-import { IsNumber, IsPositive, IsEnum, IsOptional } from 'class-validator';
+import { IsNumber, IsPositive, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export enum PaymentMethodDto {
   EXPRESS = 'EXPRESS',
@@ -40,6 +40,3 @@ export class SubscriptionResponseDto {
   createdAt!: Date;
   updatedAt!: Date;
 }
-
-// Need to import IsString
-import { IsString } from 'class-validator';
