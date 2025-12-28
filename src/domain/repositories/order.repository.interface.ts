@@ -21,7 +21,7 @@ export interface IOrderRepository {
   findByIdempotencyKey(key: string): Promise<Order | null>;
   findByCustomerId(customerId: string): Promise<Order[]>;
   findByRestaurantId(restaurantId: string): Promise<Order[]>;
-  
+
   create(data: CreateOrderData): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order>;
 }

@@ -1,8 +1,15 @@
 // Order Repository - Prisma Implementation
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { IOrderRepository, CreateOrderData } from '../../../domain/repositories/order.repository.interface';
-import { Order, OrderStatus, OrderItemProps } from '../../../domain/entities/order.entity';
+import {
+  IOrderRepository,
+  CreateOrderData,
+} from '../../../domain/repositories/order.repository.interface';
+import {
+  Order,
+  OrderStatus,
+  OrderItemProps,
+} from '../../../domain/entities/order.entity';
 import { Prisma } from '@prisma/client';
 
 type OrderWithItems = {

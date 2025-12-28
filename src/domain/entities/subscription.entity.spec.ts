@@ -1,17 +1,22 @@
 // Unit Tests - Subscription Entity
-import { Subscription, SubscriptionStatus } from '../../domain/entities/subscription.entity';
+import {
+  Subscription,
+  SubscriptionStatus,
+} from '../../domain/entities/subscription.entity';
 
 describe('Subscription Entity', () => {
-  const createSubscription = (overrides: Partial<{
-    id: string;
-    status: SubscriptionStatus;
-    startDate: Date | null;
-    endDate: Date | null;
-    monthlyAmount: number;
-    restaurantId: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }> = {}): Subscription => {
+  const createSubscription = (
+    overrides: Partial<{
+      id: string;
+      status: SubscriptionStatus;
+      startDate: Date | null;
+      endDate: Date | null;
+      monthlyAmount: number;
+      restaurantId: string;
+      createdAt: Date;
+      updatedAt: Date;
+    }> = {},
+  ): Subscription => {
     return new Subscription({
       id: 'sub-123',
       status: SubscriptionStatus.ACTIVE,
@@ -29,7 +34,7 @@ describe('Subscription Entity', () => {
     it('should return true for active subscription with future end date', () => {
       const futureDate = new Date();
       futureDate.setMonth(futureDate.getMonth() + 1);
-      
+
       const subscription = createSubscription({
         status: SubscriptionStatus.ACTIVE,
         endDate: futureDate,
@@ -41,7 +46,7 @@ describe('Subscription Entity', () => {
     it('should return false for active subscription with past end date', () => {
       const pastDate = new Date();
       pastDate.setMonth(pastDate.getMonth() - 1);
-      
+
       const subscription = createSubscription({
         status: SubscriptionStatus.ACTIVE,
         endDate: pastDate,
@@ -88,7 +93,7 @@ describe('Subscription Entity', () => {
     it('should return true when end date is in the past', () => {
       const pastDate = new Date();
       pastDate.setMonth(pastDate.getMonth() - 1);
-      
+
       const subscription = createSubscription({
         endDate: pastDate,
       });
@@ -99,7 +104,7 @@ describe('Subscription Entity', () => {
     it('should return false when end date is in the future', () => {
       const futureDate = new Date();
       futureDate.setMonth(futureDate.getMonth() + 1);
-      
+
       const subscription = createSubscription({
         endDate: futureDate,
       });
@@ -129,7 +134,7 @@ describe('Subscription Entity', () => {
     it('should return 0 when subscription is expired', () => {
       const pastDate = new Date();
       pastDate.setMonth(pastDate.getMonth() - 1);
-      
+
       const subscription = createSubscription({
         endDate: pastDate,
       });
@@ -140,7 +145,7 @@ describe('Subscription Entity', () => {
     it('should return positive number for active subscription', () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 15);
-      
+
       const subscription = createSubscription({
         endDate: futureDate,
       });

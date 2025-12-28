@@ -12,7 +12,11 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { RestaurantUseCase } from '../../../application/use-cases/restaurant/restaurant.use-case';
-import { CreateRestaurantDto, UpdateRestaurantDto, RestaurantResponseDto } from '../../../application/dtos/restaurant.dto';
+import {
+  CreateRestaurantDto,
+  UpdateRestaurantDto,
+  RestaurantResponseDto,
+} from '../../../application/dtos/restaurant.dto';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
 import { Public } from '../../decorators/public.decorator';
@@ -31,7 +35,7 @@ export class RestaurantController {
   async create(
     @Body() dto: CreateRestaurantDto,
     @CurrentUser() user: JwtPayload,
-    @Req() req: Request & { correlationId?: string }
+    @Req() req: Request & { correlationId?: string },
   ): Promise<RestaurantResponseDto> {
     return this.restaurantUseCase.create(dto, user.sub, req.correlationId);
   }
@@ -51,7 +55,9 @@ export class RestaurantController {
    */
   @Get('me')
   @Roles('RESTAURANT_OWNER')
-  async findMine(@CurrentUser() user: JwtPayload): Promise<RestaurantResponseDto | null> {
+  async findMine(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<RestaurantResponseDto | null> {
     return this.restaurantUseCase.findByOwnerId(user.sub);
   }
 
@@ -63,7 +69,7 @@ export class RestaurantController {
   @Get(':id')
   async findById(
     @Param('id') id: string,
-    @CurrentUser() user?: JwtPayload
+    @CurrentUser() user?: JwtPayload,
   ): Promise<RestaurantResponseDto> {
     return this.restaurantUseCase.findById(id, user?.sub);
   }
@@ -78,7 +84,7 @@ export class RestaurantController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateRestaurantDto,
-    @CurrentUser() user: JwtPayload
+    @CurrentUser() user: JwtPayload,
   ): Promise<RestaurantResponseDto> {
     return this.restaurantUseCase.update(id, dto, user.sub);
   }
@@ -88,7 +94,9 @@ export class RestaurantController {
    */
   @Public()
   @Get(':id/can-receive-orders')
-  async canReceiveOrders(@Param('id') id: string): Promise<{ canReceiveOrders: boolean }> {
+  async canReceiveOrders(
+    @Param('id') id: string,
+  ): Promise<{ canReceiveOrders: boolean }> {
     const canReceive = await this.restaurantUseCase.canReceiveOrders(id);
     return { canReceiveOrders: canReceive };
   }

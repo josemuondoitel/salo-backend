@@ -28,7 +28,7 @@ export class AdminUseCase {
     @Inject(AUDIT_LOG_REPOSITORY)
     private readonly auditLogRepository: IAuditLogRepository,
     private readonly subscriptionUseCase: SubscriptionUseCase,
-    private readonly queueService: QueueService
+    private readonly queueService: QueueService,
   ) {}
 
   /**
@@ -39,15 +39,20 @@ export class AdminUseCase {
     subscriptionId: string,
     adminId: string,
     idempotencyKey: string,
-    correlationId?: string
-  ): Promise<{ subscription: { id: string; status: string }; restaurant: { id: string; status: string } }> {
+    correlationId?: string,
+  ): Promise<{
+    subscription: { id: string; status: string };
+    restaurant: { id: string; status: string };
+  }> {
     const subscription = await this.subscriptionUseCase.activateSubscription(
       subscriptionId,
       adminId,
-      correlationId || uuidv4()
+      correlationId || uuidv4(),
     );
 
-    const restaurant = await this.restaurantRepository.findById(subscription.restaurantId);
+    const restaurant = await this.restaurantRepository.findById(
+      subscription.restaurantId,
+    );
 
     // Audit log for admin action
     await this.auditLogRepository.create({
@@ -64,7 +69,10 @@ export class AdminUseCase {
 
     return {
       subscription: { id: subscription.id, status: subscription.status },
-      restaurant: { id: restaurant?.id || '', status: restaurant?.status || '' },
+      restaurant: {
+        id: restaurant?.id || '',
+        status: restaurant?.status || '',
+      },
     };
   }
 
@@ -76,7 +84,7 @@ export class AdminUseCase {
     restaurantId: string,
     adminId: string,
     reason: string,
-    correlationId?: string
+    correlationId?: string,
   ): Promise<{ id: string; status: string }> {
     const restaurant = await this.restaurantRepository.findById(restaurantId);
     if (!restaurant) {
@@ -87,7 +95,7 @@ export class AdminUseCase {
 
     const suspended = await this.restaurantRepository.updateStatus(
       restaurantId,
-      RestaurantStatus.SUSPENDED
+      RestaurantStatus.SUSPENDED,
     );
 
     // Audit log
@@ -115,11 +123,12 @@ export class AdminUseCase {
    */
   async triggerExpirationCheck(
     adminId: string,
-    correlationId?: string
+    correlationId?: string,
   ): Promise<{ jobId: string }> {
     const jobCorrelationId = correlationId || uuidv4();
-    
-    const jobId = await this.queueService.addSubscriptionExpirationJob(jobCorrelationId);
+
+    const jobId =
+      await this.queueService.addSubscriptionExpirationJob(jobCorrelationId);
 
     // Audit log
     await this.auditLogRepository.create({
@@ -142,9 +151,20 @@ export class AdminUseCase {
    */
   async getAuditLogs(
     entityType: string,
-    entityId: string
-  ): Promise<{ action: string; entityType: string; entityId: string; createdAt: Date; userId: string | null }[]> {
-    const logs = await this.auditLogRepository.findByEntityId(entityType, entityId);
+    entityId: string,
+  ): Promise<
+    {
+      action: string;
+      entityType: string;
+      entityId: string;
+      createdAt: Date;
+      userId: string | null;
+    }[]
+  > {
+    const logs = await this.auditLogRepository.findByEntityId(
+      entityType,
+      entityId,
+    );
     return logs.map((log) => ({
       action: log.action,
       entityType: log.entityType,

@@ -4,3 +4,7 @@ export { SubscriptionController } from './subscription.controller';
 export { OrderController } from './order.controller';
 export { AdminController } from './admin.controller';
 export { HealthController } from './health.controller';
+export { AdminAuthController } from './admin-auth.controller';
+export { AdminAnalyticsController } from './admin-analytics.controller';
+export { AnalyticsController } from './analytics.controller';
+export { MediaController } from './media.controller';

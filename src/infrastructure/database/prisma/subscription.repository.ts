@@ -1,8 +1,14 @@
 // Subscription Repository - Prisma Implementation
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { ISubscriptionRepository, CreateSubscriptionData } from '../../../domain/repositories/subscription.repository.interface';
-import { Subscription, SubscriptionStatus } from '../../../domain/entities/subscription.entity';
+import {
+  ISubscriptionRepository,
+  CreateSubscriptionData,
+} from '../../../domain/repositories/subscription.repository.interface';
+import {
+  Subscription,
+  SubscriptionStatus,
+} from '../../../domain/entities/subscription.entity';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -32,7 +38,9 @@ export class PrismaSubscriptionRepository implements ISubscriptionRepository {
   }
 
   async findById(id: string): Promise<Subscription | null> {
-    const subscription = await this.prisma.subscription.findUnique({ where: { id } });
+    const subscription = await this.prisma.subscription.findUnique({
+      where: { id },
+    });
     return subscription ? this.toDomain(subscription) : null;
   }
 
@@ -44,7 +52,9 @@ export class PrismaSubscriptionRepository implements ISubscriptionRepository {
     return subscription ? this.toDomain(subscription) : null;
   }
 
-  async findActiveByRestaurantId(restaurantId: string): Promise<Subscription | null> {
+  async findActiveByRestaurantId(
+    restaurantId: string,
+  ): Promise<Subscription | null> {
     const subscription = await this.prisma.subscription.findFirst({
       where: {
         restaurantId,
@@ -61,14 +71,14 @@ export class PrismaSubscriptionRepository implements ISubscriptionRepository {
    */
   async findExpiredSubscriptions(): Promise<Subscription[]> {
     const now = new Date();
-    
+
     const subscriptions = await this.prisma.subscription.findMany({
       where: {
         status: SubscriptionStatus.ACTIVE,
         endDate: { lte: now },
       },
     });
-    
+
     return subscriptions.map((s) => this.toDomain(s));
   }
 
@@ -90,7 +100,11 @@ export class PrismaSubscriptionRepository implements ISubscriptionRepository {
     return this.toDomain(subscription);
   }
 
-  async activate(id: string, startDate: Date, endDate: Date): Promise<Subscription> {
+  async activate(
+    id: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Subscription> {
     const subscription = await this.prisma.subscription.update({
       where: { id },
       data: {
@@ -118,7 +132,10 @@ export class PrismaSubscriptionRepository implements ISubscriptionRepository {
     return this.toDomain(subscription);
   }
 
-  async updateStatus(id: string, status: SubscriptionStatus): Promise<Subscription> {
+  async updateStatus(
+    id: string,
+    status: SubscriptionStatus,
+  ): Promise<Subscription> {
     const subscription = await this.prisma.subscription.update({
       where: { id },
       data: { status },

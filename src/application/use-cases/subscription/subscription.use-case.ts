@@ -1,5 +1,11 @@
 // Subscription Use Cases
-import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -15,7 +21,10 @@ import {
   AUDIT_LOG_REPOSITORY,
   AuditAction,
 } from '../../../domain/repositories/audit-log.repository.interface';
-import { CreateSubscriptionDto, SubscriptionResponseDto } from '../../dtos/subscription.dto';
+import {
+  CreateSubscriptionDto,
+  SubscriptionResponseDto,
+} from '../../dtos/subscription.dto';
 import { Subscription } from '../../../domain/entities/subscription.entity';
 import { RestaurantStatus } from '../../../domain/entities/restaurant.entity';
 
@@ -28,7 +37,7 @@ export class SubscriptionUseCase {
     private readonly restaurantRepository: IRestaurantRepository,
     @Inject(AUDIT_LOG_REPOSITORY)
     private readonly auditLogRepository: IAuditLogRepository,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -39,7 +48,7 @@ export class SubscriptionUseCase {
     restaurantId: string,
     dto: CreateSubscriptionDto,
     ownerId: string,
-    correlationId?: string
+    correlationId?: string,
   ): Promise<SubscriptionResponseDto> {
     // Verify restaurant ownership
     const restaurant = await this.restaurantRepository.findById(restaurantId);
@@ -48,13 +57,18 @@ export class SubscriptionUseCase {
     }
 
     if (restaurant.ownerId !== ownerId) {
-      throw new ForbiddenException('Not authorized to create subscription for this restaurant');
+      throw new ForbiddenException(
+        'Not authorized to create subscription for this restaurant',
+      );
     }
 
     // Check for existing active subscription
-    const existingSubscription = await this.subscriptionRepository.findActiveByRestaurantId(restaurantId);
+    const existingSubscription =
+      await this.subscriptionRepository.findActiveByRestaurantId(restaurantId);
     if (existingSubscription && existingSubscription.isValid()) {
-      throw new BadRequestException('Restaurant already has an active subscription');
+      throw new BadRequestException(
+        'Restaurant already has an active subscription',
+      );
     }
 
     const subscription = await this.subscriptionRepository.create({
@@ -86,9 +100,10 @@ export class SubscriptionUseCase {
   async activateSubscription(
     subscriptionId: string,
     adminId: string,
-    correlationId?: string
+    correlationId?: string,
   ): Promise<SubscriptionResponseDto> {
-    const subscription = await this.subscriptionRepository.findById(subscriptionId);
+    const subscription =
+      await this.subscriptionRepository.findById(subscriptionId);
     if (!subscription) {
       throw new NotFoundException('Subscription not found');
     }
@@ -108,17 +123,19 @@ export class SubscriptionUseCase {
     const activatedSubscription = await this.subscriptionRepository.activate(
       subscriptionId,
       startDate,
-      endDate
+      endDate,
     );
 
     // Activate restaurant
-    const restaurant = await this.restaurantRepository.findById(subscription.restaurantId);
+    const restaurant = await this.restaurantRepository.findById(
+      subscription.restaurantId,
+    );
     if (restaurant) {
       const previousRestaurantState = restaurant.toJSON();
-      
+
       await this.restaurantRepository.updateStatus(
         restaurant.id,
-        RestaurantStatus.ACTIVE
+        RestaurantStatus.ACTIVE,
       );
 
       // Audit log for restaurant activation
@@ -126,8 +143,14 @@ export class SubscriptionUseCase {
         action: AuditAction.RESTAURANT_ACTIVATED,
         entityType: 'Restaurant',
         entityId: restaurant.id,
-        previousState: previousRestaurantState as unknown as Record<string, unknown>,
-        newState: { ...previousRestaurantState, status: RestaurantStatus.ACTIVE },
+        previousState: previousRestaurantState as unknown as Record<
+          string,
+          unknown
+        >,
+        newState: {
+          ...previousRestaurantState,
+          status: RestaurantStatus.ACTIVE,
+        },
         correlationId: correlationId || uuidv4(),
         userId: adminId,
         metadata: {
@@ -143,7 +166,10 @@ export class SubscriptionUseCase {
       entityType: 'Subscription',
       entityId: subscriptionId,
       previousState: previousState as unknown as Record<string, unknown>,
-      newState: activatedSubscription.toJSON() as unknown as Record<string, unknown>,
+      newState: activatedSubscription.toJSON() as unknown as Record<
+        string,
+        unknown
+      >,
       correlationId: correlationId || uuidv4(),
       userId: adminId,
       metadata: {
@@ -159,16 +185,22 @@ export class SubscriptionUseCase {
   /**
    * Get subscription by ID
    */
-  async findById(subscriptionId: string): Promise<SubscriptionResponseDto | null> {
-    const subscription = await this.subscriptionRepository.findById(subscriptionId);
+  async findById(
+    subscriptionId: string,
+  ): Promise<SubscriptionResponseDto | null> {
+    const subscription =
+      await this.subscriptionRepository.findById(subscriptionId);
     return subscription ? this.toResponseDto(subscription) : null;
   }
 
   /**
    * Get active subscription for a restaurant
    */
-  async findActiveByRestaurantId(restaurantId: string): Promise<SubscriptionResponseDto | null> {
-    const subscription = await this.subscriptionRepository.findActiveByRestaurantId(restaurantId);
+  async findActiveByRestaurantId(
+    restaurantId: string,
+  ): Promise<SubscriptionResponseDto | null> {
+    const subscription =
+      await this.subscriptionRepository.findActiveByRestaurantId(restaurantId);
     return subscription ? this.toResponseDto(subscription) : null;
   }
 
@@ -178,16 +210,18 @@ export class SubscriptionUseCase {
   async cancelSubscription(
     subscriptionId: string,
     userId: string,
-    correlationId?: string
+    correlationId?: string,
   ): Promise<SubscriptionResponseDto> {
-    const subscription = await this.subscriptionRepository.findById(subscriptionId);
+    const subscription =
+      await this.subscriptionRepository.findById(subscriptionId);
     if (!subscription) {
       throw new NotFoundException('Subscription not found');
     }
 
     const previousState = subscription.toJSON();
 
-    const cancelledSubscription = await this.subscriptionRepository.cancel(subscriptionId);
+    const cancelledSubscription =
+      await this.subscriptionRepository.cancel(subscriptionId);
 
     // Audit log
     await this.auditLogRepository.create({
@@ -195,7 +229,10 @@ export class SubscriptionUseCase {
       entityType: 'Subscription',
       entityId: subscriptionId,
       previousState: previousState as unknown as Record<string, unknown>,
-      newState: cancelledSubscription.toJSON() as unknown as Record<string, unknown>,
+      newState: cancelledSubscription.toJSON() as unknown as Record<
+        string,
+        unknown
+      >,
       correlationId: correlationId || uuidv4(),
       userId,
     });

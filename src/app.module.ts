@@ -15,9 +15,16 @@ import { PrismaRestaurantRepository } from './infrastructure/database/prisma/res
 import { PrismaSubscriptionRepository } from './infrastructure/database/prisma/subscription.repository';
 import { PrismaOrderRepository } from './infrastructure/database/prisma/order.repository';
 import { PrismaAuditLogRepository } from './infrastructure/database/prisma/audit-log.repository';
+import { PrismaAdminRepository } from './infrastructure/database/prisma/admin.repository';
+import { PrismaCloudinaryMediaRepository } from './infrastructure/database/prisma/cloudinary-media.repository';
+import { PrismaLedgerRepository } from './infrastructure/database/prisma/ledger.repository';
+import { PrismaAnalyticsRepository } from './infrastructure/database/prisma/analytics.repository';
 import { RedisService } from './infrastructure/cache/redis.service';
 import { IdempotencyService } from './infrastructure/cache/idempotency.service';
 import { JwtStrategy } from './infrastructure/security/jwt.strategy';
+import { AdminJwtStrategy } from './infrastructure/security/admin-jwt.strategy';
+import { GoogleAuthService } from './infrastructure/security/google-auth.service';
+import { CloudinaryService } from './infrastructure/media/cloudinary.service';
 import {
   SubscriptionExpirationProcessor,
   SUBSCRIPTION_EXPIRATION_QUEUE,
@@ -31,6 +38,10 @@ import { RESTAURANT_REPOSITORY } from './domain/repositories/restaurant.reposito
 import { SUBSCRIPTION_REPOSITORY } from './domain/repositories/subscription.repository.interface';
 import { ORDER_REPOSITORY } from './domain/repositories/order.repository.interface';
 import { AUDIT_LOG_REPOSITORY } from './domain/repositories/audit-log.repository.interface';
+import { ADMIN_REPOSITORY } from './domain/repositories/admin.repository.interface';
+import { CLOUDINARY_MEDIA_REPOSITORY } from './domain/repositories/cloudinary-media.repository.interface';
+import { LEDGER_REPOSITORY } from './domain/repositories/ledger.repository.interface';
+import { ANALYTICS_REPOSITORY } from './domain/repositories/analytics.repository.interface';
 
 // Application Use Cases
 import { AuthUseCase } from './application/use-cases/auth/auth.use-case';
@@ -38,6 +49,11 @@ import { RestaurantUseCase } from './application/use-cases/restaurant/restaurant
 import { SubscriptionUseCase } from './application/use-cases/subscription/subscription.use-case';
 import { OrderUseCase } from './application/use-cases/order/order.use-case';
 import { AdminUseCase } from './application/use-cases/admin/admin.use-case';
+import { AdminAuthUseCase } from './application/use-cases/admin-auth/admin-auth.use-case';
+import { AdminAnalyticsUseCase } from './application/use-cases/admin-analytics/admin-analytics.use-case';
+import { AnalyticsUseCase } from './application/use-cases/analytics/analytics.use-case';
+import { LedgerUseCase } from './application/use-cases/ledger/ledger.use-case';
+import { MediaUseCase } from './application/use-cases/media/media.use-case';
 
 // Presentation
 import { AuthController } from './presentation/controllers/v1/auth.controller';
@@ -46,6 +62,10 @@ import { SubscriptionController } from './presentation/controllers/v1/subscripti
 import { OrderController } from './presentation/controllers/v1/order.controller';
 import { AdminController } from './presentation/controllers/v1/admin.controller';
 import { HealthController } from './presentation/controllers/v1/health.controller';
+import { AdminAuthController } from './presentation/controllers/v1/admin-auth.controller';
+import { AdminAnalyticsController } from './presentation/controllers/v1/admin-analytics.controller';
+import { AnalyticsController } from './presentation/controllers/v1/analytics.controller';
+import { MediaController } from './presentation/controllers/v1/media.controller';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
 import { GlobalExceptionFilter } from './presentation/filters/global-exception.filter';
@@ -69,7 +89,9 @@ import { CorrelationIdInterceptor } from './presentation/interceptors/correlatio
         return {
           secret: configService.get<string>('JWT_SECRET'),
           signOptions: {
-            expiresIn: expiresIn as `${number}${'s' | 'm' | 'h' | 'd'}` | number,
+            expiresIn: expiresIn as
+              | `${number}${'s' | 'm' | 'h' | 'd'}`
+              | number,
           },
         };
       },
@@ -115,6 +137,10 @@ import { CorrelationIdInterceptor } from './presentation/interceptors/correlatio
     OrderController,
     AdminController,
     HealthController,
+    AdminAuthController,
+    AdminAnalyticsController,
+    AnalyticsController,
+    MediaController,
   ],
   providers: [
     // Infrastructure Services
@@ -122,6 +148,9 @@ import { CorrelationIdInterceptor } from './presentation/interceptors/correlatio
     RedisService,
     IdempotencyService,
     JwtStrategy,
+    AdminJwtStrategy,
+    GoogleAuthService,
+    CloudinaryService,
     QueueService,
     ScheduledTasks,
     SubscriptionExpirationProcessor,
@@ -129,9 +158,19 @@ import { CorrelationIdInterceptor } from './presentation/interceptors/correlatio
     // Repository Bindings (DDD - Infrastructure implements Domain interfaces)
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
     { provide: RESTAURANT_REPOSITORY, useClass: PrismaRestaurantRepository },
-    { provide: SUBSCRIPTION_REPOSITORY, useClass: PrismaSubscriptionRepository },
+    {
+      provide: SUBSCRIPTION_REPOSITORY,
+      useClass: PrismaSubscriptionRepository,
+    },
     { provide: ORDER_REPOSITORY, useClass: PrismaOrderRepository },
     { provide: AUDIT_LOG_REPOSITORY, useClass: PrismaAuditLogRepository },
+    { provide: ADMIN_REPOSITORY, useClass: PrismaAdminRepository },
+    {
+      provide: CLOUDINARY_MEDIA_REPOSITORY,
+      useClass: PrismaCloudinaryMediaRepository,
+    },
+    { provide: LEDGER_REPOSITORY, useClass: PrismaLedgerRepository },
+    { provide: ANALYTICS_REPOSITORY, useClass: PrismaAnalyticsRepository },
 
     // Application Use Cases
     AuthUseCase,
@@ -139,6 +178,11 @@ import { CorrelationIdInterceptor } from './presentation/interceptors/correlatio
     SubscriptionUseCase,
     OrderUseCase,
     AdminUseCase,
+    AdminAuthUseCase,
+    AdminAnalyticsUseCase,
+    AnalyticsUseCase,
+    LedgerUseCase,
+    MediaUseCase,
 
     // Global Guards
     { provide: APP_GUARD, useClass: JwtAuthGuard },

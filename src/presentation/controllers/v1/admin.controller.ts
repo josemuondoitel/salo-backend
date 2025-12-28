@@ -46,13 +46,16 @@ export class AdminController {
     @Body() _dto: ValidatePaymentDto,
     @CurrentUser() user: JwtPayload,
     @IdempotencyKey() idempotencyKey: string,
-    @Req() req: Request & { correlationId?: string }
-  ): Promise<{ subscription: { id: string; status: string }; restaurant: { id: string; status: string } }> {
+    @Req() req: Request & { correlationId?: string },
+  ): Promise<{
+    subscription: { id: string; status: string };
+    restaurant: { id: string; status: string };
+  }> {
     return this.adminUseCase.validatePayment(
       subscriptionId,
       user.sub,
       idempotencyKey,
-      req.correlationId
+      req.correlationId,
     );
   }
 
@@ -66,13 +69,13 @@ export class AdminController {
     @Param('id') restaurantId: string,
     @Body() dto: SuspendRestaurantDto,
     @CurrentUser() user: JwtPayload,
-    @Req() req: Request & { correlationId?: string }
+    @Req() req: Request & { correlationId?: string },
   ): Promise<{ id: string; status: string }> {
     return this.adminUseCase.suspendRestaurant(
       restaurantId,
       user.sub,
       dto.reason,
-      req.correlationId
+      req.correlationId,
     );
   }
 
@@ -84,9 +87,12 @@ export class AdminController {
   @HttpCode(HttpStatus.ACCEPTED)
   async triggerExpirationCheck(
     @CurrentUser() user: JwtPayload,
-    @Req() req: Request & { correlationId?: string }
+    @Req() req: Request & { correlationId?: string },
   ): Promise<{ jobId: string }> {
-    return this.adminUseCase.triggerExpirationCheck(user.sub, req.correlationId);
+    return this.adminUseCase.triggerExpirationCheck(
+      user.sub,
+      req.correlationId,
+    );
   }
 
   /**
@@ -96,8 +102,16 @@ export class AdminController {
   @Get('audit-logs')
   async getAuditLogs(
     @Query('entityType') entityType: string,
-    @Query('entityId') entityId: string
-  ): Promise<{ action: string; entityType: string; entityId: string; createdAt: Date; userId: string | null }[]> {
+    @Query('entityId') entityId: string,
+  ): Promise<
+    {
+      action: string;
+      entityType: string;
+      entityId: string;
+      createdAt: Date;
+      userId: string | null;
+    }[]
+  > {
     return this.adminUseCase.getAuditLogs(entityType, entityId);
   }
 

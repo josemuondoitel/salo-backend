@@ -67,6 +67,30 @@ enum AuditAction {
   PAYMENT_VALIDATED
   PAYMENT_REJECTED
   ADMIN_ACTION
+  LEDGER_ENTRY_CREATED
+  MEDIA_UPLOADED
+  GOOGLE_LOGIN
+}
+
+enum AnalyticsEventType {
+  DISH_VIEWED
+  MENU_VIEWED
+  ORDER_CREATED
+  RESTAURANT_VIEWED
+}
+
+enum LedgerAccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum MediaType {
+  RESTAURANT_PROFILE
+  DISH_PHOTO
+  USER_PROFILE
 }
 
 // =====================
@@ -76,11 +100,16 @@ enum AuditAction {
 model User {
   id            String          @id @default(uuid())
   email         String          @unique
-  passwordHash  String
+  passwordHash  String?
   role          UserRole        @default(CUSTOMER)
   firstName     String
   lastName      String
   phone         String?
+  
+  // Google OAuth fields
+  googleId      String?         @unique
+  authProvider  String          @default("local")
+  
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   
@@ -90,25 +119,30 @@ model User {
 
   @@index([email])
   @@index([role])
+  @@index([googleId])
 }
 
 model Restaurant {
-  id            String            @id @default(uuid())
-  name          String
-  description   String?
-  address       String
-  phone         String
-  status        RestaurantStatus  @default(PENDING)
+  id              String            @id @default(uuid())
+  name            String
+  description     String?
+  address         String
+  phone           String
+  status          RestaurantStatus  @default(PENDING)
   
-  ownerId       String            @unique
-  owner         User              @relation("RestaurantOwner", fields: [ownerId], references: [id])
+  // Cloudinary media reference
+  profileImageId  String?
+  profileImageUrl String?
   
-  menuItems     MenuItem[]
-  subscriptions Subscription[]
-  orders        Order[]
+  ownerId         String            @unique
+  owner           User              @relation("RestaurantOwner", fields: [ownerId], references: [id])
   
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  menuItems       MenuItem[]
+  subscriptions   Subscription[]
+  orders          Order[]
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([status])
   @@index([ownerId])
@@ -121,6 +155,10 @@ model MenuItem {
   price         Decimal     @db.Decimal(10, 2)
   isAvailable   Boolean     @default(true)
   category      String
+  
+  // Cloudinary media reference
+  imageId       String?
+  imageUrl      String?
   
   restaurantId  String
   restaurant    Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
@@ -140,6 +178,9 @@ model Subscription {
   startDate       DateTime?
   endDate         DateTime?
   monthlyAmount   Decimal             @db.Decimal(10, 2)
+  
+  // Ledger reference for payment tracking
+  ledgerTransactionId String?
   
   restaurantId    String
   restaurant      Restaurant          @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
@@ -245,4 +286,168 @@ model IdempotencyRecord {
 
   @@index([key])
   @@index([expiresAt])
+}
+
+// =====================
+// ADMIN - SEPARATE TABLE (MANDATORY)
+// =====================
+
+model Admin {
+  id            String          @id @default(uuid())
+  email         String          @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  isActive      Boolean         @default(true)
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  auditLogs     AdminAuditLog[]
+
+  @@index([email])
+  @@index([isActive])
+}
+
+model AdminAuditLog {
+  id              String        @id @default(uuid())
+  action          String
+  entityType      String
+  entityId        String
+  previousState   Json?
+  newState        Json?
+  metadata        Json?
+  correlationId   String
+  ipAddress       String?
+  userAgent       String?
+  
+  adminId         String
+  admin           Admin         @relation(fields: [adminId], references: [id])
+  
+  createdAt       DateTime      @default(now())
+
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([correlationId])
+  @@index([createdAt])
+  @@index([adminId])
+}
+
+// =====================
+// CLOUDINARY MEDIA
+// =====================
+
+model CloudinaryMedia {
+  id              String        @id @default(uuid())
+  publicId        String        @unique
+  secureUrl       String
+  mediaType       MediaType
+  
+  // Polymorphic reference - entity that owns this media
+  entityType      String
+  entityId        String
+  
+  width           Int?
+  height          Int?
+  format          String?
+  bytes           Int?
+  
+  idempotencyKey  String        @unique
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([entityType, entityId])
+  @@index([mediaType])
+  @@index([publicId])
+  @@index([idempotencyKey])
+}
+
+// =====================
+// LEDGER - DOUBLE ENTRY ACCOUNTING (MANDATORY)
+// =====================
+
+model LedgerAccount {
+  id              String              @id @default(uuid())
+  code            String              @unique
+  name            String
+  accountType     LedgerAccountType
+  description     String?
+  isActive        Boolean             @default(true)
+  
+  debitEntries    LedgerEntry[]       @relation("DebitAccount")
+  creditEntries   LedgerEntry[]       @relation("CreditAccount")
+  
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([code])
+  @@index([accountType])
+  @@index([isActive])
+}
+
+model LedgerTransaction {
+  id              String          @id @default(uuid())
+  description     String
+  reference       String?
+  referenceType   String?
+  referenceId     String?
+  
+  entries         LedgerEntry[]
+  
+  idempotencyKey  String          @unique
+  
+  createdAt       DateTime        @default(now())
+
+  @@index([referenceType, referenceId])
+  @@index([idempotencyKey])
+  @@index([createdAt])
+}
+
+model LedgerEntry {
+  id              String            @id @default(uuid())
+  
+  transactionId   String
+  transaction     LedgerTransaction @relation(fields: [transactionId], references: [id])
+  
+  debitAccountId  String
+  debitAccount    LedgerAccount     @relation("DebitAccount", fields: [debitAccountId], references: [id])
+  
+  creditAccountId String
+  creditAccount   LedgerAccount     @relation("CreditAccount", fields: [creditAccountId], references: [id])
+  
+  amount          Decimal           @db.Decimal(15, 2)
+  description     String?
+  
+  createdAt       DateTime          @default(now())
+
+  @@index([transactionId])
+  @@index([debitAccountId])
+  @@index([creditAccountId])
+  @@index([createdAt])
+}
+
+// =====================
+// ANALYTICS EVENTS
+// =====================
+
+model AnalyticsEvent {
+  id              String              @id @default(uuid())
+  eventType       AnalyticsEventType
+  
+  restaurantId    String
+  menuItemId      String?
+  userId          String?
+  
+  metadata        Json?
+  
+  idempotencyKey  String              @unique
+  
+  createdAt       DateTime            @default(now())
+
+  @@index([eventType])
+  @@index([restaurantId])
+  @@index([menuItemId])
+  @@index([idempotencyKey])
+  @@index([createdAt])
 }

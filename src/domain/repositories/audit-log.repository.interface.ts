@@ -45,7 +45,10 @@ export interface CreateAuditLogData {
 
 export interface IAuditLogRepository {
   create(data: CreateAuditLogData): Promise<AuditLogEntry>;
-  findByEntityId(entityType: string, entityId: string): Promise<AuditLogEntry[]>;
+  findByEntityId(
+    entityType: string,
+    entityId: string,
+  ): Promise<AuditLogEntry[]>;
   findByCorrelationId(correlationId: string): Promise<AuditLogEntry[]>;
   findByAction(action: AuditAction): Promise<AuditLogEntry[]>;
 }

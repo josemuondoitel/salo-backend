@@ -30,7 +30,10 @@ export class IdempotencyService {
     const cached = await this.redis.get(key);
 
     if (cached) {
-      const parsed = JSON.parse(cached) as { statusCode: number; body: unknown };
+      const parsed = JSON.parse(cached) as {
+        statusCode: number;
+        body: unknown;
+      };
       return {
         exists: true,
         response: parsed,
@@ -47,7 +50,7 @@ export class IdempotencyService {
     idempotencyKey: string,
     statusCode: number,
     body: unknown,
-    ttlSeconds: number = this.DEFAULT_TTL
+    ttlSeconds: number = this.DEFAULT_TTL,
   ): Promise<void> {
     const key = this.getKey(idempotencyKey);
     const value = JSON.stringify({ statusCode, body });

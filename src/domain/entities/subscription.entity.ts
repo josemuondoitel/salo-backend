@@ -65,11 +65,11 @@ export class Subscription {
     if (this.props.status !== SubscriptionStatus.ACTIVE) {
       return false;
     }
-    
+
     if (!this.props.endDate) {
       return false;
     }
-    
+
     const now = new Date();
     return this.props.endDate > now;
   }
@@ -82,7 +82,7 @@ export class Subscription {
     if (!this.props.endDate) {
       return this.props.status === SubscriptionStatus.EXPIRED;
     }
-    
+
     const now = new Date();
     return this.props.endDate <= now;
   }
@@ -102,7 +102,7 @@ export class Subscription {
     if (!this.props.endDate) {
       return 0;
     }
-    
+
     const now = new Date();
     const diff = this.props.endDate.getTime() - now.getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));

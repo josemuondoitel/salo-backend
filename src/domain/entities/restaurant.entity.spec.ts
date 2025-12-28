@@ -1,18 +1,23 @@
 // Unit Tests - Restaurant Entity
-import { Restaurant, RestaurantStatus } from '../../domain/entities/restaurant.entity';
+import {
+  Restaurant,
+  RestaurantStatus,
+} from '../../domain/entities/restaurant.entity';
 
 describe('Restaurant Entity', () => {
-  const createRestaurant = (overrides: Partial<{
-    id: string;
-    name: string;
-    description: string | null;
-    address: string;
-    phone: string;
-    status: RestaurantStatus;
-    ownerId: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }> = {}): Restaurant => {
+  const createRestaurant = (
+    overrides: Partial<{
+      id: string;
+      name: string;
+      description: string | null;
+      address: string;
+      phone: string;
+      status: RestaurantStatus;
+      ownerId: string;
+      createdAt: Date;
+      updatedAt: Date;
+    }> = {},
+  ): Restaurant => {
     return new Restaurant({
       id: 'rest-123',
       name: 'Test Restaurant',
@@ -39,12 +44,16 @@ describe('Restaurant Entity', () => {
     });
 
     it('should return false when restaurant is SUSPENDED', () => {
-      const restaurant = createRestaurant({ status: RestaurantStatus.SUSPENDED });
+      const restaurant = createRestaurant({
+        status: RestaurantStatus.SUSPENDED,
+      });
       expect(restaurant.isVisible).toBe(false);
     });
 
     it('should return false when restaurant is INACTIVE', () => {
-      const restaurant = createRestaurant({ status: RestaurantStatus.INACTIVE });
+      const restaurant = createRestaurant({
+        status: RestaurantStatus.INACTIVE,
+      });
       expect(restaurant.isVisible).toBe(false);
     });
   });
@@ -56,13 +65,19 @@ describe('Restaurant Entity', () => {
     });
 
     it('should return 0 when restaurant is not ACTIVE', () => {
-      const suspendedRestaurant = createRestaurant({ status: RestaurantStatus.SUSPENDED });
+      const suspendedRestaurant = createRestaurant({
+        status: RestaurantStatus.SUSPENDED,
+      });
       expect(suspendedRestaurant.visibility).toBe(0);
 
-      const pendingRestaurant = createRestaurant({ status: RestaurantStatus.PENDING });
+      const pendingRestaurant = createRestaurant({
+        status: RestaurantStatus.PENDING,
+      });
       expect(pendingRestaurant.visibility).toBe(0);
 
-      const inactiveRestaurant = createRestaurant({ status: RestaurantStatus.INACTIVE });
+      const inactiveRestaurant = createRestaurant({
+        status: RestaurantStatus.INACTIVE,
+      });
       expect(inactiveRestaurant.visibility).toBe(0);
     });
   });
@@ -74,7 +89,9 @@ describe('Restaurant Entity', () => {
     });
 
     it('should return false when restaurant is not ACTIVE', () => {
-      const suspendedRestaurant = createRestaurant({ status: RestaurantStatus.SUSPENDED });
+      const suspendedRestaurant = createRestaurant({
+        status: RestaurantStatus.SUSPENDED,
+      });
       expect(suspendedRestaurant.canReceiveOrders()).toBe(false);
     });
   });
@@ -93,7 +110,9 @@ describe('Restaurant Entity', () => {
 
   describe('activate', () => {
     it('should return new restaurant with ACTIVE status', () => {
-      const restaurant = createRestaurant({ status: RestaurantStatus.SUSPENDED });
+      const restaurant = createRestaurant({
+        status: RestaurantStatus.SUSPENDED,
+      });
       const activated = restaurant.activate();
 
       expect(activated.status).toBe(RestaurantStatus.ACTIVE);
@@ -105,8 +124,10 @@ describe('Restaurant Entity', () => {
 
   describe('Auto-Suspension on Expiration', () => {
     it('should demonstrate visibility becomes ZERO when suspended', () => {
-      const activeRestaurant = createRestaurant({ status: RestaurantStatus.ACTIVE });
-      
+      const activeRestaurant = createRestaurant({
+        status: RestaurantStatus.ACTIVE,
+      });
+
       // Before suspension
       expect(activeRestaurant.visibility).toBe(100);
       expect(activeRestaurant.isVisible).toBe(true);
@@ -114,7 +135,7 @@ describe('Restaurant Entity', () => {
 
       // After suspension (simulating what happens when subscription expires)
       const suspendedRestaurant = activeRestaurant.suspend();
-      
+
       // ZERO TOLERANCE: Visibility MUST be ZERO
       expect(suspendedRestaurant.visibility).toBe(0);
       expect(suspendedRestaurant.isVisible).toBe(false);

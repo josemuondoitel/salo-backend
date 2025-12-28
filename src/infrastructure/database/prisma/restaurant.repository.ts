@@ -1,8 +1,14 @@
 // Restaurant Repository - Prisma Implementation
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { IRestaurantRepository, CreateRestaurantData } from '../../../domain/repositories/restaurant.repository.interface';
-import { Restaurant, RestaurantStatus } from '../../../domain/entities/restaurant.entity';
+import {
+  IRestaurantRepository,
+  CreateRestaurantData,
+} from '../../../domain/repositories/restaurant.repository.interface';
+import {
+  Restaurant,
+  RestaurantStatus,
+} from '../../../domain/entities/restaurant.entity';
 
 @Injectable()
 export class PrismaRestaurantRepository implements IRestaurantRepository {
@@ -33,12 +39,16 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
   }
 
   async findById(id: string): Promise<Restaurant | null> {
-    const restaurant = await this.prisma.restaurant.findUnique({ where: { id } });
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: { id },
+    });
     return restaurant ? this.toDomain(restaurant) : null;
   }
 
   async findByOwnerId(ownerId: string): Promise<Restaurant | null> {
-    const restaurant = await this.prisma.restaurant.findUnique({ where: { ownerId } });
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: { ownerId },
+    });
     return restaurant ? this.toDomain(restaurant) : null;
   }
 
@@ -48,7 +58,7 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
    */
   async findAllVisible(): Promise<Restaurant[]> {
     const now = new Date();
-    
+
     const restaurants = await this.prisma.restaurant.findMany({
       where: {
         status: RestaurantStatus.ACTIVE,
@@ -60,7 +70,7 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
         },
       },
     });
-    
+
     return restaurants.map((r) => this.toDomain(r));
   }
 
@@ -85,7 +95,10 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
     return this.toDomain(restaurant);
   }
 
-  async updateStatus(id: string, status: RestaurantStatus): Promise<Restaurant> {
+  async updateStatus(
+    id: string,
+    status: RestaurantStatus,
+  ): Promise<Restaurant> {
     const restaurant = await this.prisma.restaurant.update({
       where: { id },
       data: { status },
@@ -95,7 +108,12 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
 
   async update(
     id: string,
-    data: Partial<{ name: string; description: string | null; address: string; phone: string }>
+    data: Partial<{
+      name: string;
+      description: string | null;
+      address: string;
+      phone: string;
+    }>,
   ): Promise<Restaurant> {
     const restaurant = await this.prisma.restaurant.update({
       where: { id },

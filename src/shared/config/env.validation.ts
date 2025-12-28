@@ -1,6 +1,13 @@
 // Configuration validation
 import { plainToInstance } from 'class-transformer';
-import { IsString, IsNumber, IsOptional, validateSync, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  validateSync,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class EnvironmentVariables {
   @IsString()
@@ -46,7 +53,9 @@ export class EnvironmentVariables {
   THROTTLE_LIMIT: number = 100;
 }
 
-export function validate(config: Record<string, unknown>): EnvironmentVariables {
+export function validate(
+  config: Record<string, unknown>,
+): EnvironmentVariables {
   const validatedConfig = plainToInstance(EnvironmentVariables, config, {
     enableImplicitConversion: true,
   });

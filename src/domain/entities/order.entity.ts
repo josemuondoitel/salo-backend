@@ -93,7 +93,9 @@ export class Order {
   }
 
   canBeCancelled(): boolean {
-    return [OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(this.props.status);
+    return [OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(
+      this.props.status,
+    );
   }
 
   confirm(): Order {

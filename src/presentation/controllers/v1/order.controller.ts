@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { OrderUseCase } from '../../../application/use-cases/order/order.use-case';
-import { CreateOrderDto, OrderResponseDto, UpdateOrderStatusDto } from '../../../application/dtos/order.dto';
+import {
+  CreateOrderDto,
+  OrderResponseDto,
+  UpdateOrderStatusDto,
+} from '../../../application/dtos/order.dto';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
 import { IdempotencyKey } from '../../decorators/idempotency-key.decorator';
@@ -35,9 +39,14 @@ export class OrderController {
     @Body() dto: CreateOrderDto,
     @CurrentUser() user: JwtPayload,
     @IdempotencyKey() idempotencyKey: string,
-    @Req() req: Request & { correlationId?: string }
+    @Req() req: Request & { correlationId?: string },
   ): Promise<OrderResponseDto> {
-    return this.orderUseCase.create(dto, user.sub, idempotencyKey, req.correlationId);
+    return this.orderUseCase.create(
+      dto,
+      user.sub,
+      idempotencyKey,
+      req.correlationId,
+    );
   }
 
   /**
@@ -46,7 +55,7 @@ export class OrderController {
   @Get(':id')
   async findById(
     @Param('id') id: string,
-    @CurrentUser() user: JwtPayload
+    @CurrentUser() user: JwtPayload,
   ): Promise<OrderResponseDto> {
     return this.orderUseCase.findById(id, user.sub);
   }
@@ -56,7 +65,9 @@ export class OrderController {
    */
   @Get('my/orders')
   @Roles('CUSTOMER')
-  async findMyOrders(@CurrentUser() user: JwtPayload): Promise<OrderResponseDto[]> {
+  async findMyOrders(
+    @CurrentUser() user: JwtPayload,
+  ): Promise<OrderResponseDto[]> {
     return this.orderUseCase.findByCustomerId(user.sub);
   }
 
@@ -68,7 +79,7 @@ export class OrderController {
   @Roles('RESTAURANT_OWNER')
   async findByRestaurant(
     @Param('restaurantId') restaurantId: string,
-    @CurrentUser() user: JwtPayload
+    @CurrentUser() user: JwtPayload,
   ): Promise<OrderResponseDto[]> {
     return this.orderUseCase.findByRestaurantId(restaurantId, user.sub);
   }
@@ -84,13 +95,13 @@ export class OrderController {
     @Param('id') id: string,
     @Body() dto: UpdateOrderStatusDto,
     @CurrentUser() user: JwtPayload,
-    @Req() req: Request & { correlationId?: string }
+    @Req() req: Request & { correlationId?: string },
   ): Promise<OrderResponseDto> {
     return this.orderUseCase.updateStatus(
       id,
       dto.status as OrderStatus,
       user.sub,
-      req.correlationId
+      req.correlationId,
     );
   }
 }

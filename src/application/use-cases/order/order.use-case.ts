@@ -1,5 +1,11 @@
 // Order Use Cases
-import { Injectable, Inject, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import {
   IOrderRepository,
@@ -35,7 +41,7 @@ export class OrderUseCase {
     @Inject(AUDIT_LOG_REPOSITORY)
     private readonly auditLogRepository: IAuditLogRepository,
     private readonly idempotencyService: IdempotencyService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -47,7 +53,7 @@ export class OrderUseCase {
     dto: CreateOrderDto,
     customerId: string,
     idempotencyKey: string,
-    correlationId?: string
+    correlationId?: string,
   ): Promise<OrderResponseDto> {
     // Check idempotency
     const existingResult = await this.idempotencyService.check(idempotencyKey);
@@ -56,13 +62,16 @@ export class OrderUseCase {
     }
 
     // Check if order already exists with this idempotency key
-    const existingOrder = await this.orderRepository.findByIdempotencyKey(idempotencyKey);
+    const existingOrder =
+      await this.orderRepository.findByIdempotencyKey(idempotencyKey);
     if (existingOrder) {
       return this.toResponseDto(existingOrder);
     }
 
     // Validate restaurant can receive orders
-    const restaurant = await this.restaurantRepository.findById(dto.restaurantId);
+    const restaurant = await this.restaurantRepository.findById(
+      dto.restaurantId,
+    );
     if (!restaurant) {
       throw new NotFoundException('Restaurant not found');
     }
@@ -73,7 +82,7 @@ export class OrderUseCase {
      */
     if (!restaurant.isActive()) {
       throw new ForbiddenException(
-        'Restaurant is not accepting orders. Status: ' + restaurant.status
+        'Restaurant is not accepting orders. Status: ' + restaurant.status,
       );
     }
 
@@ -81,16 +90,23 @@ export class OrderUseCase {
      * SUBSCRIPTION VALIDATION
      * Restaurant MUST have valid subscription to receive orders
      */
-    const subscription = await this.subscriptionRepository.findActiveByRestaurantId(dto.restaurantId);
+    const subscription =
+      await this.subscriptionRepository.findActiveByRestaurantId(
+        dto.restaurantId,
+      );
     if (!subscription || !subscription.isValid()) {
       throw new ForbiddenException(
-        'Restaurant subscription is not active or has expired'
+        'Restaurant subscription is not active or has expired',
       );
     }
 
     // Calculate total amount from menu items
     let totalAmount = 0;
-    const orderItems: { menuItemId: string; quantity: number; unitPrice: number }[] = [];
+    const orderItems: {
+      menuItemId: string;
+      quantity: number;
+      unitPrice: number;
+    }[] = [];
 
     for (const item of dto.items) {
       const menuItem = await this.prisma.menuItem.findUnique({
@@ -102,11 +118,15 @@ export class OrderUseCase {
       }
 
       if (!menuItem.isAvailable) {
-        throw new BadRequestException(`Menu item ${menuItem.name} is not available`);
+        throw new BadRequestException(
+          `Menu item ${menuItem.name} is not available`,
+        );
       }
 
       if (menuItem.restaurantId !== dto.restaurantId) {
-        throw new BadRequestException(`Menu item ${item.menuItemId} does not belong to this restaurant`);
+        throw new BadRequestException(
+          `Menu item ${item.menuItemId} does not belong to this restaurant`,
+        );
       }
 
       const unitPrice = menuItem.price.toNumber();
@@ -163,7 +183,9 @@ export class OrderUseCase {
 
     // Check access - customer or restaurant owner
     if (order.customerId !== userId) {
-      const restaurant = await this.restaurantRepository.findById(order.restaurantId);
+      const restaurant = await this.restaurantRepository.findById(
+        order.restaurantId,
+      );
       if (!restaurant || restaurant.ownerId !== userId) {
         throw new ForbiddenException('Not authorized to view this order');
       }
@@ -183,11 +205,16 @@ export class OrderUseCase {
   /**
    * Get orders by restaurant
    */
-  async findByRestaurantId(restaurantId: string, ownerId: string): Promise<OrderResponseDto[]> {
+  async findByRestaurantId(
+    restaurantId: string,
+    ownerId: string,
+  ): Promise<OrderResponseDto[]> {
     // Verify restaurant ownership
     const restaurant = await this.restaurantRepository.findById(restaurantId);
     if (!restaurant || restaurant.ownerId !== ownerId) {
-      throw new ForbiddenException('Not authorized to view orders for this restaurant');
+      throw new ForbiddenException(
+        'Not authorized to view orders for this restaurant',
+      );
     }
 
     const orders = await this.orderRepository.findByRestaurantId(restaurantId);
@@ -201,7 +228,7 @@ export class OrderUseCase {
     orderId: string,
     status: OrderStatus,
     ownerId: string,
-    correlationId?: string
+    correlationId?: string,
   ): Promise<OrderResponseDto> {
     const order = await this.orderRepository.findById(orderId);
     if (!order) {
@@ -209,13 +236,18 @@ export class OrderUseCase {
     }
 
     // Verify restaurant ownership
-    const restaurant = await this.restaurantRepository.findById(order.restaurantId);
+    const restaurant = await this.restaurantRepository.findById(
+      order.restaurantId,
+    );
     if (!restaurant || restaurant.ownerId !== ownerId) {
       throw new ForbiddenException('Not authorized to update this order');
     }
 
     const previousState = order.toJSON();
-    const updatedOrder = await this.orderRepository.updateStatus(orderId, status);
+    const updatedOrder = await this.orderRepository.updateStatus(
+      orderId,
+      status,
+    );
 
     // Audit log
     await this.auditLogRepository.create({

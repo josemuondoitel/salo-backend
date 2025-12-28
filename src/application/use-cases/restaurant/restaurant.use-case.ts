@@ -1,5 +1,10 @@
 // Restaurant Use Cases
-import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import {
   IRestaurantRepository,
@@ -14,7 +19,11 @@ import {
   AUDIT_LOG_REPOSITORY,
   AuditAction,
 } from '../../../domain/repositories/audit-log.repository.interface';
-import { CreateRestaurantDto, UpdateRestaurantDto, RestaurantResponseDto } from '../../dtos/restaurant.dto';
+import {
+  CreateRestaurantDto,
+  UpdateRestaurantDto,
+  RestaurantResponseDto,
+} from '../../dtos/restaurant.dto';
 import { Restaurant } from '../../../domain/entities/restaurant.entity';
 
 @Injectable()
@@ -25,7 +34,7 @@ export class RestaurantUseCase {
     @Inject(SUBSCRIPTION_REPOSITORY)
     private readonly subscriptionRepository: ISubscriptionRepository,
     @Inject(AUDIT_LOG_REPOSITORY)
-    private readonly auditLogRepository: IAuditLogRepository
+    private readonly auditLogRepository: IAuditLogRepository,
   ) {}
 
   /**
@@ -35,10 +44,11 @@ export class RestaurantUseCase {
   async create(
     dto: CreateRestaurantDto,
     ownerId: string,
-    correlationId?: string
+    correlationId?: string,
   ): Promise<RestaurantResponseDto> {
     // Check if owner already has a restaurant
-    const existingRestaurant = await this.restaurantRepository.findByOwnerId(ownerId);
+    const existingRestaurant =
+      await this.restaurantRepository.findByOwnerId(ownerId);
     if (existingRestaurant) {
       throw new ForbiddenException('User already owns a restaurant');
     }
@@ -68,7 +78,10 @@ export class RestaurantUseCase {
    * Get restaurant by ID
    * Only visible restaurants can be retrieved by non-owners
    */
-  async findById(id: string, requesterId?: string): Promise<RestaurantResponseDto> {
+  async findById(
+    id: string,
+    requesterId?: string,
+  ): Promise<RestaurantResponseDto> {
     const restaurant = await this.restaurantRepository.findById(id);
     if (!restaurant) {
       throw new NotFoundException('Restaurant not found');
@@ -106,7 +119,7 @@ export class RestaurantUseCase {
   async update(
     id: string,
     dto: UpdateRestaurantDto,
-    ownerId: string
+    ownerId: string,
   ): Promise<RestaurantResponseDto> {
     const restaurant = await this.restaurantRepository.findById(id);
     if (!restaurant) {
@@ -143,7 +156,8 @@ export class RestaurantUseCase {
     }
 
     // Must have valid subscription
-    const subscription = await this.subscriptionRepository.findActiveByRestaurantId(restaurantId);
+    const subscription =
+      await this.subscriptionRepository.findActiveByRestaurantId(restaurantId);
     return subscription !== null && subscription.isValid();
   }
 

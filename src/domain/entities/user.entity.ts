@@ -9,11 +9,13 @@ export enum UserRole {
 export interface UserProps {
   id: string;
   email: string;
-  passwordHash: string;
+  passwordHash?: string | null;
   role: UserRole;
   firstName: string;
   lastName: string;
   phone?: string | null;
+  googleId?: string | null;
+  authProvider: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,7 +35,7 @@ export class User {
     return this.props.email;
   }
 
-  get passwordHash(): string {
+  get passwordHash(): string | null | undefined {
     return this.props.passwordHash;
   }
 
@@ -51,6 +53,14 @@ export class User {
 
   get phone(): string | null | undefined {
     return this.props.phone;
+  }
+
+  get googleId(): string | null | undefined {
+    return this.props.googleId;
+  }
+
+  get authProvider(): string {
+    return this.props.authProvider;
   }
 
   get fullName(): string {
@@ -75,6 +85,10 @@ export class User {
 
   isCustomer(): boolean {
     return this.props.role === UserRole.CUSTOMER;
+  }
+
+  isGoogleUser(): boolean {
+    return this.props.authProvider === 'google';
   }
 
   toJSON(): UserProps {

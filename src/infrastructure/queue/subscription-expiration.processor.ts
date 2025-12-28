@@ -43,29 +43,33 @@ export class SubscriptionExpirationProcessor extends WorkerHost {
     @Inject(RESTAURANT_REPOSITORY)
     private readonly restaurantRepository: IRestaurantRepository,
     @Inject(AUDIT_LOG_REPOSITORY)
-    private readonly auditLogRepository: IAuditLogRepository
+    private readonly auditLogRepository: IAuditLogRepository,
   ) {
     super();
   }
 
   /**
    * CRITICAL: Subscription Expiration Job
-   * 
+   *
    * This is a DETERMINISTIC job that:
    * 1. Finds all ACTIVE subscriptions with endDate <= now
    * 2. Marks them as EXPIRED
    * 3. Suspends the associated restaurants
    * 4. Creates audit logs for all actions
-   * 
+   *
    * This job MUST be:
    * - Idempotent (running multiple times produces same result)
    * - Auditable (all actions are logged)
    * - Deterministic (same input always produces same output)
    */
-  async process(job: Job<SubscriptionExpirationJobData>): Promise<SubscriptionExpirationResult> {
+  async process(
+    job: Job<SubscriptionExpirationJobData>,
+  ): Promise<SubscriptionExpirationResult> {
     const correlationId = job.data.correlationId || uuidv4();
-    
-    this.logger.log(`Starting subscription expiration check. CorrelationId: ${correlationId}`);
+
+    this.logger.log(
+      `Starting subscription expiration check. CorrelationId: ${correlationId}`,
+    );
 
     const result: SubscriptionExpirationResult = {
       processedCount: 0,
@@ -76,9 +80,12 @@ export class SubscriptionExpirationProcessor extends WorkerHost {
 
     try {
       // Find all expired subscriptions (ACTIVE with endDate <= now)
-      const expiredSubscriptions = await this.subscriptionRepository.findExpiredSubscriptions();
-      
-      this.logger.log(`Found ${expiredSubscriptions.length} expired subscriptions`);
+      const expiredSubscriptions =
+        await this.subscriptionRepository.findExpiredSubscriptions();
+
+      this.logger.log(
+        `Found ${expiredSubscriptions.length} expired subscriptions`,
+      );
 
       for (const subscription of expiredSubscriptions) {
         try {
@@ -88,7 +95,8 @@ export class SubscriptionExpirationProcessor extends WorkerHost {
           const previousSubscriptionState = subscription.toJSON();
 
           // Mark subscription as expired
-          const expiredSubscription = await this.subscriptionRepository.markExpired(subscription.id);
+          const expiredSubscription =
+            await this.subscriptionRepository.markExpired(subscription.id);
           result.expiredSubscriptions.push(subscription.id);
 
           // Create audit log for subscription expiration
@@ -96,8 +104,14 @@ export class SubscriptionExpirationProcessor extends WorkerHost {
             action: AuditAction.SUBSCRIPTION_EXPIRED,
             entityType: 'Subscription',
             entityId: subscription.id,
-            previousState: previousSubscriptionState as unknown as Record<string, unknown>,
-            newState: expiredSubscription.toJSON() as unknown as Record<string, unknown>,
+            previousState: previousSubscriptionState as unknown as Record<
+              string,
+              unknown
+            >,
+            newState: expiredSubscription.toJSON() as unknown as Record<
+              string,
+              unknown
+            >,
             correlationId,
             metadata: {
               jobId: job.id,
@@ -107,16 +121,19 @@ export class SubscriptionExpirationProcessor extends WorkerHost {
           });
 
           // AUTO-SUSPENSION: Suspend the restaurant
-          const restaurant = await this.restaurantRepository.findById(subscription.restaurantId);
-          
+          const restaurant = await this.restaurantRepository.findById(
+            subscription.restaurantId,
+          );
+
           if (restaurant && restaurant.isActive()) {
             const previousRestaurantState = restaurant.toJSON();
-            
+
             // Suspend restaurant - VISIBILITY becomes ZERO
-            const suspendedRestaurant = await this.restaurantRepository.updateStatus(
-              restaurant.id,
-              RestaurantStatus.SUSPENDED
-            );
+            const suspendedRestaurant =
+              await this.restaurantRepository.updateStatus(
+                restaurant.id,
+                RestaurantStatus.SUSPENDED,
+              );
             result.suspendedRestaurants.push(restaurant.id);
 
             // Create audit log for restaurant suspension
@@ -124,8 +141,14 @@ export class SubscriptionExpirationProcessor extends WorkerHost {
               action: AuditAction.RESTAURANT_SUSPENDED,
               entityType: 'Restaurant',
               entityId: restaurant.id,
-              previousState: previousRestaurantState as unknown as Record<string, unknown>,
-              newState: suspendedRestaurant.toJSON() as unknown as Record<string, unknown>,
+              previousState: previousRestaurantState as unknown as Record<
+                string,
+                unknown
+              >,
+              newState: suspendedRestaurant.toJSON() as unknown as Record<
+                string,
+                unknown
+              >,
               correlationId,
               metadata: {
                 jobId: job.id,
@@ -137,30 +160,36 @@ export class SubscriptionExpirationProcessor extends WorkerHost {
 
             this.logger.log(
               `Restaurant ${restaurant.id} suspended due to subscription expiration. ` +
-              `Previous status: ${restaurant.status}, New status: SUSPENDED`
+                `Previous status: ${restaurant.status}, New status: SUSPENDED`,
             );
           }
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          result.errors.push(`Subscription ${subscription.id}: ${errorMessage}`);
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          result.errors.push(
+            `Subscription ${subscription.id}: ${errorMessage}`,
+          );
           this.logger.error(
-            `Error processing subscription ${subscription.id}: ${errorMessage}`
+            `Error processing subscription ${subscription.id}: ${errorMessage}`,
           );
         }
       }
 
       this.logger.log(
         `Subscription expiration check completed. ` +
-        `Processed: ${result.processedCount}, ` +
-        `Expired: ${result.expiredSubscriptions.length}, ` +
-        `Suspended: ${result.suspendedRestaurants.length}, ` +
-        `Errors: ${result.errors.length}`
+          `Processed: ${result.processedCount}, ` +
+          `Expired: ${result.expiredSubscriptions.length}, ` +
+          `Suspended: ${result.suspendedRestaurants.length}, ` +
+          `Errors: ${result.errors.length}`,
       );
 
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to process subscription expiration job: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to process subscription expiration job: ${errorMessage}`,
+      );
       throw error;
     }
   }

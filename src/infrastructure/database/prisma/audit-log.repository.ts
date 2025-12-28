@@ -50,9 +50,9 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
         action: data.action,
         entityType: data.entityType,
         entityId: data.entityId,
-        previousState: data.previousState as object ?? undefined,
-        newState: data.newState as object ?? undefined,
-        metadata: data.metadata as object ?? undefined,
+        previousState: (data.previousState as object) ?? undefined,
+        newState: (data.newState as object) ?? undefined,
+        metadata: (data.metadata as object) ?? undefined,
         correlationId: data.correlationId,
         ipAddress: data.ipAddress,
         userAgent: data.userAgent,
@@ -62,7 +62,10 @@ export class PrismaAuditLogRepository implements IAuditLogRepository {
     return this.toDomain(auditLog);
   }
 
-  async findByEntityId(entityType: string, entityId: string): Promise<AuditLogEntry[]> {
+  async findByEntityId(
+    entityType: string,
+    entityId: string,
+  ): Promise<AuditLogEntry[]> {
     const logs = await this.prisma.auditLog.findMany({
       where: { entityType, entityId },
       orderBy: { createdAt: 'desc' },
