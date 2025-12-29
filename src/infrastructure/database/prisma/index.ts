@@ -4,3 +4,7 @@ export { PrismaRestaurantRepository } from './restaurant.repository';
 export { PrismaSubscriptionRepository } from './subscription.repository';
 export { PrismaOrderRepository } from './order.repository';
 export { PrismaAuditLogRepository } from './audit-log.repository';
+export { PrismaAdminRepository } from './admin.repository';
+export { PrismaCloudinaryMediaRepository } from './cloudinary-media.repository';
+export { PrismaLedgerRepository } from './ledger.repository';
+export { PrismaAnalyticsRepository } from './analytics.repository';

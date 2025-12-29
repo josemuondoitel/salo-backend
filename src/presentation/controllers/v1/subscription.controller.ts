@@ -11,7 +11,10 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { SubscriptionUseCase } from '../../../application/use-cases/subscription/subscription.use-case';
-import { CreateSubscriptionDto, SubscriptionResponseDto } from '../../../application/dtos/subscription.dto';
+import {
+  CreateSubscriptionDto,
+  SubscriptionResponseDto,
+} from '../../../application/dtos/subscription.dto';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { Roles } from '../../decorators/roles.decorator';
 import { IdempotencyKey } from '../../decorators/idempotency-key.decorator';
@@ -33,16 +36,23 @@ export class SubscriptionController {
     @Body() dto: CreateSubscriptionDto,
     @CurrentUser() user: JwtPayload,
     @IdempotencyKey() _idempotencyKey: string,
-    @Req() req: Request & { correlationId?: string }
+    @Req() req: Request & { correlationId?: string },
   ): Promise<SubscriptionResponseDto> {
-    return this.subscriptionUseCase.create(restaurantId, dto, user.sub, req.correlationId);
+    return this.subscriptionUseCase.create(
+      restaurantId,
+      dto,
+      user.sub,
+      req.correlationId,
+    );
   }
 
   /**
    * Get subscription by ID
    */
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<SubscriptionResponseDto | null> {
+  async findById(
+    @Param('id') id: string,
+  ): Promise<SubscriptionResponseDto | null> {
     return this.subscriptionUseCase.findById(id);
   }
 
@@ -51,7 +61,7 @@ export class SubscriptionController {
    */
   @Get('restaurant/:restaurantId/active')
   async findActiveByRestaurant(
-    @Param('restaurantId') restaurantId: string
+    @Param('restaurantId') restaurantId: string,
   ): Promise<SubscriptionResponseDto | null> {
     return this.subscriptionUseCase.findActiveByRestaurantId(restaurantId);
   }
@@ -66,8 +76,12 @@ export class SubscriptionController {
   async cancel(
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload,
-    @Req() req: Request & { correlationId?: string }
+    @Req() req: Request & { correlationId?: string },
   ): Promise<SubscriptionResponseDto> {
-    return this.subscriptionUseCase.cancelSubscription(id, user.sub, req.correlationId);
+    return this.subscriptionUseCase.cancelSubscription(
+      id,
+      user.sub,
+      req.correlationId,
+    );
   }
 }

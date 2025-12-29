@@ -19,20 +19,23 @@ export class CorrelationIdInterceptor implements NestInterceptor {
     const response = context.switchToHttp().getResponse<Response>();
 
     // Get or generate correlation ID
-    let correlationId = request.headers[CORRELATION_ID_HEADER] as string | undefined;
-    
+    let correlationId = request.headers[CORRELATION_ID_HEADER] as
+      | string
+      | undefined;
+
     if (!correlationId) {
       correlationId = uuidv4();
     }
 
     // Attach to request for use in handlers
-    (request as Request & { correlationId: string }).correlationId = correlationId;
+    (request as Request & { correlationId: string }).correlationId =
+      correlationId;
 
     return next.handle().pipe(
       tap(() => {
         // Add correlation ID to response headers
-        response.setHeader(CORRELATION_ID_HEADER, correlationId!);
-      })
+        response.setHeader(CORRELATION_ID_HEADER, correlationId);
+      }),
     );
   }
 }

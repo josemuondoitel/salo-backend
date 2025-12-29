@@ -1,5 +1,11 @@
 // Authentication DTOs
-import { IsEmail, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
 import { UserRole } from '../../domain/entities/user.entity';
 
 export class RegisterDto {
@@ -33,6 +39,11 @@ export class LoginDto {
 
   @IsString()
   password!: string;
+}
+
+export class GoogleLoginDto {
+  @IsString()
+  idToken!: string;
 }
 
 export class AuthResponseDto {

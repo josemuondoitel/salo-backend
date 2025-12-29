@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
-  
+
   // Fail-fast config validation
   const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
   for (const envVar of requiredEnvVars) {
@@ -44,7 +44,7 @@ async function bootstrap(): Promise<void> {
       transformOptions: {
         enableImplicitConversion: true,
       },
-    })
+    }),
   );
 
   const port = process.env.PORT ?? 3000;

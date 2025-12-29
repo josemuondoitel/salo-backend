@@ -14,7 +14,7 @@ export class QueueService {
 
   constructor(
     @InjectQueue(SUBSCRIPTION_EXPIRATION_QUEUE)
-    private readonly subscriptionExpirationQueue: Queue<SubscriptionExpirationJobData>
+    private readonly subscriptionExpirationQueue: Queue<SubscriptionExpirationJobData>,
   ) {}
 
   /**
@@ -22,7 +22,7 @@ export class QueueService {
    */
   async addSubscriptionExpirationJob(correlationId?: string): Promise<string> {
     const jobCorrelationId = correlationId || uuidv4();
-    
+
     const job = await this.subscriptionExpirationQueue.add(
       'check-expiration',
       {
@@ -32,7 +32,7 @@ export class QueueService {
       {
         removeOnComplete: 100, // Keep last 100 completed jobs
         removeOnFail: 50, // Keep last 50 failed jobs
-      }
+      },
     );
 
     this.logger.log(`Added subscription expiration job: ${job.id}`);

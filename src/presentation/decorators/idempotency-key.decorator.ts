@@ -1,5 +1,9 @@
 // Idempotency Key Decorator
-import { createParamDecorator, ExecutionContext, BadRequestException } from '@nestjs/common';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  BadRequestException,
+} from '@nestjs/common';
 import { Request } from 'express';
 
 export const IDEMPOTENCY_KEY_HEADER = 'x-idempotency-key';
@@ -11,10 +15,10 @@ export const IdempotencyKey = createParamDecorator(
 
     if (required && !key) {
       throw new BadRequestException(
-        `Missing required header: ${IDEMPOTENCY_KEY_HEADER}`
+        `Missing required header: ${IDEMPOTENCY_KEY_HEADER}`,
       );
     }
 
     return key;
-  }
+  },
 );

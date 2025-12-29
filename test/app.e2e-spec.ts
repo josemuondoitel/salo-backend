@@ -6,12 +6,18 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 
 // Test the domain logic directly since E2E requires database setup
-import { Restaurant, RestaurantStatus } from '../src/domain/entities/restaurant.entity';
-import { Subscription, SubscriptionStatus } from '../src/domain/entities/subscription.entity';
+import {
+  Restaurant,
+  RestaurantStatus,
+} from '../src/domain/entities/restaurant.entity';
+import {
+  Subscription,
+  SubscriptionStatus,
+} from '../src/domain/entities/subscription.entity';
 
 /**
  * Integration Tests for SALO Business Rules
- * 
+ *
  * These tests verify the core business invariants:
  * 1. Restaurants with expired subscriptions have ZERO visibility
  * 2. Orders are blocked when restaurant is not ACTIVE
