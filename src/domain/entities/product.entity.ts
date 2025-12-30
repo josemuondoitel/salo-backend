@@ -169,21 +169,21 @@ export class Product {
 
   /**
    * Update quantity (logical availability)
+   * If quantity is 0 and product is not INACTIVE, sets status to OUT_OF_STOCK
    */
   updateQuantity(quantity: number): Product {
     if (quantity < 0) {
       throw new Error('Quantity cannot be negative');
     }
-    const newStatus =
-      quantity === 0 ? ProductStatus.OUT_OF_STOCK : this.props.status;
+    // Auto-set to OUT_OF_STOCK when quantity is 0, unless already INACTIVE
+    const status =
+      quantity === 0 && this.props.status !== ProductStatus.INACTIVE
+        ? ProductStatus.OUT_OF_STOCK
+        : this.props.status;
     return new Product({
       ...this.props,
       quantity,
-      status:
-        newStatus === ProductStatus.OUT_OF_STOCK &&
-        this.props.status !== ProductStatus.INACTIVE
-          ? ProductStatus.OUT_OF_STOCK
-          : this.props.status,
+      status,
       updatedAt: new Date(),
     });
   }

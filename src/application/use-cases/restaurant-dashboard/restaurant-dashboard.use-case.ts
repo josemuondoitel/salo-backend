@@ -129,8 +129,6 @@ export class RestaurantDashboardUseCase {
     }
 
     const previousState = order.toJSON();
-    // Validate transition using domain entity (throws if invalid)
-    order.accept();
 
     const updatedOrder = await this.orderRepository.updateStatus(
       orderId,
