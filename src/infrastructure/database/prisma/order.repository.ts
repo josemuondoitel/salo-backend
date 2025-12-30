@@ -4,6 +4,7 @@ import { PrismaService } from './prisma.service';
 import {
   IOrderRepository,
   CreateOrderData,
+  UpdateOrderStatusData,
 } from '../../../domain/repositories/order.repository.interface';
 import {
   Order,
@@ -20,6 +21,9 @@ type OrderWithItems = {
   idempotencyKey: string;
   customerId: string;
   restaurantId: string;
+  rejectionReason: string | null;
+  reportReason: string | null;
+  cancellationReason: string | null;
   createdAt: Date;
   updatedAt: Date;
   items: {
@@ -50,6 +54,9 @@ export class PrismaOrderRepository implements IOrderRepository {
       idempotencyKey: data.idempotencyKey,
       customerId: data.customerId,
       restaurantId: data.restaurantId,
+      rejectionReason: data.rejectionReason,
+      reportReason: data.reportReason,
+      cancellationReason: data.cancellationReason,
       items,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
@@ -90,6 +97,21 @@ export class PrismaOrderRepository implements IOrderRepository {
     return orders.map((o) => this.toDomain(o));
   }
 
+  async findByRestaurantIdAndStatus(
+    restaurantId: string,
+    statuses: OrderStatus[],
+  ): Promise<Order[]> {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        restaurantId,
+        status: { in: statuses },
+      },
+      include: { items: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return orders.map((o) => this.toDomain(o));
+  }
+
   async create(data: CreateOrderData): Promise<Order> {
     const order = await this.prisma.order.create({
       data: {
@@ -116,6 +138,32 @@ export class PrismaOrderRepository implements IOrderRepository {
     const order = await this.prisma.order.update({
       where: { id },
       data: { status },
+      include: { items: true },
+    });
+    return this.toDomain(order);
+  }
+
+  async updateOrderWithReason(
+    id: string,
+    data: UpdateOrderStatusData,
+  ): Promise<Order> {
+    const updateData: Prisma.OrderUpdateInput = {
+      status: data.status,
+    };
+
+    if (data.rejectionReason !== undefined) {
+      updateData.rejectionReason = data.rejectionReason;
+    }
+    if (data.reportReason !== undefined) {
+      updateData.reportReason = data.reportReason;
+    }
+    if (data.cancellationReason !== undefined) {
+      updateData.cancellationReason = data.cancellationReason;
+    }
+
+    const order = await this.prisma.order.update({
+      where: { id },
+      data: updateData,
       include: { items: true },
     });
     return this.toDomain(order);

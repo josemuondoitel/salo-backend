@@ -32,3 +32,4 @@ export {
   AnalyticsEventType,
   AnalyticsEventProps,
 } from './analytics-event.entity';
+export { Product, ProductStatus, ProductProps } from './product.entity';

@@ -80,7 +80,7 @@ describe('User Entity - Google OAuth', () => {
 
       expect(user.isCustomer()).toBe(true);
       expect(user.isRestaurantOwner()).toBe(false);
-      expect(user.isAdmin()).toBe(false);
+      // NOTE: isAdmin() removed - Admin access is via separate Admin table
     });
 
     it('should identify restaurant owner role', () => {
@@ -98,7 +98,7 @@ describe('User Entity - Google OAuth', () => {
 
       expect(user.isCustomer()).toBe(false);
       expect(user.isRestaurantOwner()).toBe(true);
-      expect(user.isAdmin()).toBe(false);
+      // NOTE: isAdmin() removed - Admin access is via separate Admin table
     });
   });
 });

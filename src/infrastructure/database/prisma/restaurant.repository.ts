@@ -22,6 +22,7 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
     phone: string;
     status: string;
     ownerId: string;
+    deletedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
   }): Restaurant {
@@ -33,21 +34,34 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
       phone: data.phone,
       status: data.status as RestaurantStatus,
       ownerId: data.ownerId,
+      deletedAt: data.deletedAt,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });
   }
 
-  async findById(id: string): Promise<Restaurant | null> {
+  async findById(
+    id: string,
+    includeDeleted = false,
+  ): Promise<Restaurant | null> {
     const restaurant = await this.prisma.restaurant.findUnique({
-      where: { id },
+      where: {
+        id,
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
     });
     return restaurant ? this.toDomain(restaurant) : null;
   }
 
-  async findByOwnerId(ownerId: string): Promise<Restaurant | null> {
-    const restaurant = await this.prisma.restaurant.findUnique({
-      where: { ownerId },
+  async findByOwnerId(
+    ownerId: string,
+    includeDeleted = false,
+  ): Promise<Restaurant | null> {
+    const restaurant = await this.prisma.restaurant.findFirst({
+      where: {
+        ownerId,
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
     });
     return restaurant ? this.toDomain(restaurant) : null;
   }
@@ -55,6 +69,7 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
   /**
    * VISIBILITY ENFORCEMENT: Only returns ACTIVE restaurants with valid subscriptions
    * This is a critical query that enforces the zero-tolerance visibility rule
+   * Excludes soft deleted restaurants
    */
   async findAllVisible(): Promise<Restaurant[]> {
     const now = new Date();
@@ -62,6 +77,7 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
     const restaurants = await this.prisma.restaurant.findMany({
       where: {
         status: RestaurantStatus.ACTIVE,
+        deletedAt: null,
         subscriptions: {
           some: {
             status: 'ACTIVE',
@@ -74,9 +90,15 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
     return restaurants.map((r) => this.toDomain(r));
   }
 
-  async findByStatus(status: RestaurantStatus): Promise<Restaurant[]> {
+  async findByStatus(
+    status: RestaurantStatus,
+    includeDeleted = false,
+  ): Promise<Restaurant[]> {
     const restaurants = await this.prisma.restaurant.findMany({
-      where: { status },
+      where: {
+        status,
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
     });
     return restaurants.map((r) => this.toDomain(r));
   }
@@ -122,6 +144,25 @@ export class PrismaRestaurantRepository implements IRestaurantRepository {
     return this.toDomain(restaurant);
   }
 
+  async softDelete(id: string): Promise<Restaurant> {
+    const restaurant = await this.prisma.restaurant.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+    return this.toDomain(restaurant);
+  }
+
+  async restore(id: string): Promise<Restaurant> {
+    const restaurant = await this.prisma.restaurant.update({
+      where: { id },
+      data: { deletedAt: null },
+    });
+    return this.toDomain(restaurant);
+  }
+
+  /**
+   * @deprecated Use softDelete instead. Physical delete is not recommended.
+   */
   async delete(id: string): Promise<void> {
     await this.prisma.restaurant.delete({ where: { id } });
   }

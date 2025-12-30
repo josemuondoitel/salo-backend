@@ -8,3 +8,4 @@ export { PrismaAdminRepository } from './admin.repository';
 export { PrismaCloudinaryMediaRepository } from './cloudinary-media.repository';
 export { PrismaLedgerRepository } from './ledger.repository';
 export { PrismaAnalyticsRepository } from './analytics.repository';
+export { PrismaProductRepository } from './product.repository';

@@ -19,6 +19,7 @@ import { PrismaAdminRepository } from './infrastructure/database/prisma/admin.re
 import { PrismaCloudinaryMediaRepository } from './infrastructure/database/prisma/cloudinary-media.repository';
 import { PrismaLedgerRepository } from './infrastructure/database/prisma/ledger.repository';
 import { PrismaAnalyticsRepository } from './infrastructure/database/prisma/analytics.repository';
+import { PrismaProductRepository } from './infrastructure/database/prisma/product.repository';
 import { RedisService } from './infrastructure/cache/redis.service';
 import { IdempotencyService } from './infrastructure/cache/idempotency.service';
 import { JwtStrategy } from './infrastructure/security/jwt.strategy';
@@ -42,6 +43,7 @@ import { ADMIN_REPOSITORY } from './domain/repositories/admin.repository.interfa
 import { CLOUDINARY_MEDIA_REPOSITORY } from './domain/repositories/cloudinary-media.repository.interface';
 import { LEDGER_REPOSITORY } from './domain/repositories/ledger.repository.interface';
 import { ANALYTICS_REPOSITORY } from './domain/repositories/analytics.repository.interface';
+import { PRODUCT_REPOSITORY } from './domain/repositories/product.repository.interface';
 
 // Application Use Cases
 import { AuthUseCase } from './application/use-cases/auth/auth.use-case';
@@ -54,6 +56,8 @@ import { AdminAnalyticsUseCase } from './application/use-cases/admin-analytics/a
 import { AnalyticsUseCase } from './application/use-cases/analytics/analytics.use-case';
 import { LedgerUseCase } from './application/use-cases/ledger/ledger.use-case';
 import { MediaUseCase } from './application/use-cases/media/media.use-case';
+import { ProductUseCase } from './application/use-cases/product/product.use-case';
+import { RestaurantDashboardUseCase } from './application/use-cases/restaurant-dashboard/restaurant-dashboard.use-case';
 
 // Presentation
 import { AuthController } from './presentation/controllers/v1/auth.controller';
@@ -66,6 +70,9 @@ import { AdminAuthController } from './presentation/controllers/v1/admin-auth.co
 import { AdminAnalyticsController } from './presentation/controllers/v1/admin-analytics.controller';
 import { AnalyticsController } from './presentation/controllers/v1/analytics.controller';
 import { MediaController } from './presentation/controllers/v1/media.controller';
+import { ProductController } from './presentation/controllers/v1/product.controller';
+import { RestaurantDashboardProductController } from './presentation/controllers/v1/restaurant-dashboard-product.controller';
+import { RestaurantDashboardOrderController } from './presentation/controllers/v1/restaurant-dashboard-order.controller';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
 import { GlobalExceptionFilter } from './presentation/filters/global-exception.filter';
@@ -141,6 +148,9 @@ import { CorrelationIdInterceptor } from './presentation/interceptors/correlatio
     AdminAnalyticsController,
     AnalyticsController,
     MediaController,
+    ProductController,
+    RestaurantDashboardProductController,
+    RestaurantDashboardOrderController,
   ],
   providers: [
     // Infrastructure Services
@@ -171,6 +181,7 @@ import { CorrelationIdInterceptor } from './presentation/interceptors/correlatio
     },
     { provide: LEDGER_REPOSITORY, useClass: PrismaLedgerRepository },
     { provide: ANALYTICS_REPOSITORY, useClass: PrismaAnalyticsRepository },
+    { provide: PRODUCT_REPOSITORY, useClass: PrismaProductRepository },
 
     // Application Use Cases
     AuthUseCase,
@@ -183,6 +194,8 @@ import { CorrelationIdInterceptor } from './presentation/interceptors/correlatio
     AnalyticsUseCase,
     LedgerUseCase,
     MediaUseCase,
+    ProductUseCase,
+    RestaurantDashboardUseCase,
 
     // Global Guards
     { provide: APP_GUARD, useClass: JwtAuthGuard },
