@@ -16,14 +16,29 @@ export interface CreateOrderData {
   totalAmount: number;
 }
 
+export interface UpdateOrderStatusData {
+  status: OrderStatus;
+  rejectionReason?: string | null;
+  reportReason?: string | null;
+  cancellationReason?: string | null;
+}
+
 export interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
   findByIdempotencyKey(key: string): Promise<Order | null>;
   findByCustomerId(customerId: string): Promise<Order[]>;
   findByRestaurantId(restaurantId: string): Promise<Order[]>;
+  findByRestaurantIdAndStatus(
+    restaurantId: string,
+    statuses: OrderStatus[],
+  ): Promise<Order[]>;
 
   create(data: CreateOrderData): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order>;
+  updateOrderWithReason(
+    id: string,
+    data: UpdateOrderStatusData,
+  ): Promise<Order>;
 }
 
 export const ORDER_REPOSITORY = Symbol('ORDER_REPOSITORY');

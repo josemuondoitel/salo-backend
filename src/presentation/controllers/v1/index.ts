@@ -8,3 +8,6 @@ export { AdminAuthController } from './admin-auth.controller';
 export { AdminAnalyticsController } from './admin-analytics.controller';
 export { AnalyticsController } from './analytics.controller';
 export { MediaController } from './media.controller';
+export { ProductController } from './product.controller';
+export { RestaurantDashboardProductController } from './restaurant-dashboard-product.controller';
+export { RestaurantDashboardOrderController } from './restaurant-dashboard-order.controller';

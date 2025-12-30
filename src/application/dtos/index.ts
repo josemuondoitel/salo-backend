@@ -16,3 +16,9 @@ export {
   OrderResponseDto,
   OrderItemDto,
 } from './order.dto';
+export {
+  CreateProductDto,
+  UpdateProductDto,
+  UpdateProductStatusDto,
+  ProductResponseDto,
+} from './product.dto';

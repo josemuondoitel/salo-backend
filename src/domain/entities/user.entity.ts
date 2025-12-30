@@ -1,9 +1,9 @@
 // Domain Entities - Pure business logic, framework-agnostic
+// NOTE: ADMIN role removed - Admin access is via separate Admin table
 
 export enum UserRole {
   CUSTOMER = 'CUSTOMER',
   RESTAURANT_OWNER = 'RESTAURANT_OWNER',
-  ADMIN = 'ADMIN',
 }
 
 export interface UserProps {
@@ -75,9 +75,7 @@ export class User {
     return this.props.updatedAt;
   }
 
-  isAdmin(): boolean {
-    return this.props.role === UserRole.ADMIN;
-  }
+  // NOTE: isAdmin() removed - Admin access is via separate Admin table and AdminJwtStrategy
 
   isRestaurantOwner(): boolean {
     return this.props.role === UserRole.RESTAURANT_OWNER;

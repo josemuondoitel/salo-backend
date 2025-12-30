@@ -49,3 +49,9 @@ export {
   CreateAnalyticsEventData,
   AnalyticsMetrics,
 } from './analytics.repository.interface';
+export {
+  IProductRepository,
+  PRODUCT_REPOSITORY,
+  CreateProductData,
+  UpdateProductData,
+} from './product.repository.interface';

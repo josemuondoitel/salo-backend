@@ -17,7 +17,6 @@ datasource db {
 enum UserRole {
   CUSTOMER
   RESTAURANT_OWNER
-  ADMIN
 }
 
 enum RestaurantStatus {
@@ -47,11 +46,20 @@ enum PaymentStatus {
 
 enum OrderStatus {
   PENDING
+  ACCEPTED
+  REJECTED
   CONFIRMED
   PREPARING
   READY
   DELIVERED
   CANCELLED
+  REPORTED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
 }
 
 enum AuditAction {
@@ -62,14 +70,22 @@ enum AuditAction {
   RESTAURANT_ACTIVATED
   RESTAURANT_SUSPENDED
   RESTAURANT_CREATED
+  RESTAURANT_DELETED
   ORDER_CREATED
   ORDER_UPDATED
+  ORDER_ACCEPTED
+  ORDER_REJECTED
+  ORDER_CANCELLED
+  ORDER_REPORTED
   PAYMENT_VALIDATED
   PAYMENT_REJECTED
   ADMIN_ACTION
   LEDGER_ENTRY_CREATED
   MEDIA_UPLOADED
   GOOGLE_LOGIN
+  PRODUCT_CREATED
+  PRODUCT_UPDATED
+  PRODUCT_DELETED
 }
 
 enum AnalyticsEventType {
@@ -90,6 +106,7 @@ enum LedgerAccountType {
 enum MediaType {
   RESTAURANT_PROFILE
   DISH_PHOTO
+  PRODUCT_PHOTO
   USER_PROFILE
 }
 
@@ -134,10 +151,14 @@ model Restaurant {
   profileImageId  String?
   profileImageUrl String?
   
+  // Soft delete support
+  deletedAt       DateTime?
+  
   ownerId         String            @unique
   owner           User              @relation("RestaurantOwner", fields: [ownerId], references: [id])
   
   menuItems       MenuItem[]
+  products        Product[]
   subscriptions   Subscription[]
   orders          Order[]
   
@@ -146,6 +167,7 @@ model Restaurant {
 
   @@index([status])
   @@index([ownerId])
+  @@index([deletedAt])
 }
 
 model MenuItem {
@@ -169,6 +191,159 @@ model MenuItem {
   updatedAt     DateTime    @updatedAt
 
   @@index([restaurantId])
+  @@index([isAvailable])
+}
+
+// =====================
+// PRODUCT MANAGEMENT (DDD)
+// =====================
+
+model Product {
+  id            String        @id @default(uuid())
+  name          String
+  description   String?
+  price         Decimal       @db.Decimal(10, 2)
+  quantity      Int           @default(0)
+  status        ProductStatus @default(ACTIVE)
+  
+  // Cloudinary media reference
+  imageId       String?
+  imageUrl      String?
+  
+  // Preventive / Future-proof fields
+  isFeatured    Boolean       @default(false)
+  sortOrder     Int           @default(0)
+  metadata      Json?
+  
+  // Soft delete support
+  deletedAt     DateTime?
+  
+  restaurantId  String
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  // Relations for ingredients and modifiers
+  ingredients   ProductIngredient[]
+  modifierGroups ProductModifierGroup[]
+  extras        ProductExtra[]
+  orderProducts OrderProduct[]
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([restaurantId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([isFeatured])
+  @@index([sortOrder])
+}
+
+// =====================
+// INGREDIENTS, MODIFIERS & EXTENSIONS
+// =====================
+
+model Ingredient {
+  id            String              @id @default(uuid())
+  name          String
+  description   String?
+  isAllergen    Boolean             @default(false)
+  
+  restaurantId  String
+  
+  products      ProductIngredient[]
+  
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([restaurantId])
+  @@index([isAllergen])
+}
+
+model ProductIngredient {
+  id            String      @id @default(uuid())
+  
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  ingredientId  String
+  ingredient    Ingredient  @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  
+  quantity      String?
+  isOptional    Boolean     @default(false)
+  
+  createdAt     DateTime    @default(now())
+
+  @@unique([productId, ingredientId])
+  @@index([productId])
+  @@index([ingredientId])
+}
+
+model ModifierGroup {
+  id            String                  @id @default(uuid())
+  name          String
+  description   String?
+  minSelections Int                     @default(0)
+  maxSelections Int                     @default(1)
+  isRequired    Boolean                 @default(false)
+  
+  restaurantId  String
+  
+  modifiers     Modifier[]
+  products      ProductModifierGroup[]
+  
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  @@index([restaurantId])
+}
+
+model Modifier {
+  id              String        @id @default(uuid())
+  name            String
+  description     String?
+  priceAdjustment Decimal       @db.Decimal(10, 2) @default(0)
+  isDefault       Boolean       @default(false)
+  
+  modifierGroupId String
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([modifierGroupId])
+}
+
+model ProductModifierGroup {
+  id              String        @id @default(uuid())
+  
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  modifierGroupId String
+  modifierGroup   ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+  
+  sortOrder       Int           @default(0)
+  
+  createdAt       DateTime      @default(now())
+
+  @@unique([productId, modifierGroupId])
+  @@index([productId])
+  @@index([modifierGroupId])
+}
+
+model ProductExtra {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  price         Decimal   @db.Decimal(10, 2)
+  isAvailable   Boolean   @default(true)
+  
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([productId])
   @@index([isAvailable])
 }
 
@@ -220,6 +395,11 @@ model Order {
   notes             String?
   idempotencyKey    String        @unique
   
+  // Rejection/Report fields
+  rejectionReason   String?
+  reportReason      String?
+  cancellationReason String?
+  
   customerId        String
   customer          User          @relation("CustomerOrders", fields: [customerId], references: [id])
   
@@ -227,6 +407,7 @@ model Order {
   restaurant        Restaurant    @relation(fields: [restaurantId], references: [id])
   
   items             OrderItem[]
+  orderProducts     OrderProduct[]
   
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
@@ -250,6 +431,26 @@ model OrderItem {
 
   @@index([orderId])
   @@index([menuItemId])
+}
+
+// OrderProduct for the new Product model
+model OrderProduct {
+  id          String    @id @default(uuid())
+  quantity    Int
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  
+  // Snapshot of modifiers/extras at order time
+  modifiers   Json?
+  extras      Json?
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model AuditLog {

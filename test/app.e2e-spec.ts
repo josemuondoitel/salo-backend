@@ -1,9 +1,5 @@
 // E2E Tests - Order Blocking and Visibility Enforcement
 // Tests prove: No active subscription = no exposure
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import request from 'supertest';
-import { App } from 'supertest/types';
 
 // Test the domain logic directly since E2E requires database setup
 import {

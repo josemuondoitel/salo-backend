@@ -15,6 +15,7 @@ export interface RestaurantProps {
   phone: string;
   status: RestaurantStatus;
   ownerId: string;
+  deletedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +55,10 @@ export class Restaurant {
     return this.props.ownerId;
   }
 
+  get deletedAt(): Date | null | undefined {
+    return this.props.deletedAt;
+  }
+
   get createdAt(): Date {
     return this.props.createdAt;
   }
@@ -63,15 +68,22 @@ export class Restaurant {
   }
 
   /**
-   * VISIBILITY RULE: Restaurant is visible ONLY if status is ACTIVE
-   * This is a computed property, not stored in database
+   * Check if restaurant is soft deleted
    */
-  get isVisible(): boolean {
-    return this.props.status === RestaurantStatus.ACTIVE;
+  isDeleted(): boolean {
+    return this.props.deletedAt !== null && this.props.deletedAt !== undefined;
   }
 
   /**
-   * VISIBILITY SCORE: ZERO if not active
+   * VISIBILITY RULE: Restaurant is visible ONLY if status is ACTIVE and not deleted
+   * This is a computed property, not stored in database
+   */
+  get isVisible(): boolean {
+    return this.props.status === RestaurantStatus.ACTIVE && !this.isDeleted();
+  }
+
+  /**
+   * VISIBILITY SCORE: ZERO if not active or deleted
    * This enforces the ZERO TOLERANCE visibility rule
    */
   get visibility(): number {
@@ -79,7 +91,7 @@ export class Restaurant {
   }
 
   isActive(): boolean {
-    return this.props.status === RestaurantStatus.ACTIVE;
+    return this.props.status === RestaurantStatus.ACTIVE && !this.isDeleted();
   }
 
   isPending(): boolean {
@@ -114,6 +126,30 @@ export class Restaurant {
     return new Restaurant({
       ...this.props,
       status: RestaurantStatus.ACTIVE,
+      updatedAt: new Date(),
+    });
+  }
+
+  /**
+   * Soft delete restaurant
+   * Returns new Restaurant instance (immutability)
+   */
+  softDelete(): Restaurant {
+    return new Restaurant({
+      ...this.props,
+      deletedAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
+  /**
+   * Restore soft deleted restaurant
+   * Returns new Restaurant instance (immutability)
+   */
+  restore(): Restaurant {
+    return new Restaurant({
+      ...this.props,
+      deletedAt: null,
       updatedAt: new Date(),
     });
   }
